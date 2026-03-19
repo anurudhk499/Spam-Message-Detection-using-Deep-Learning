@@ -55,19 +55,18 @@ Example Confusion Matrix:
 ## 🗂️ Project Structure
 
 ```
-project/
+Spam-Message-Detection-using-Deep-Learning
+/
 │
 ├── app.py
 ├── models/
 │   ├── spam_model.h5
 │   ├── tokenizer.pkl
-│
+├── dataset/
+│   └── spam.csv
 ├── templates/
 │   └── index.html
-│
-├── notebook/
-│   └── spam_detection.ipynb
-│
+├── spam_detection.ipynb
 └── README.md
 ```
 
