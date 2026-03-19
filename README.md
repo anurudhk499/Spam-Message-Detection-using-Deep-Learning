@@ -1,146 +1,55 @@
-# 📩 Spam Message Detection using Deep Learning
+# 📨 SMS Spam Detector - Deep Learning powered Web App
 
-A simple and effective spam detection system built using **TensorFlow/Keras** and deployed with a **Flask web application**.
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.0-FF6F00?style=for-the-badge&logo=tensorflow)](https://tensorflow.org)
+[![Flask](https://img.shields.io/badge/Flask-2.0-000000?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com/)
+[![Python](https://img.shields.io/badge/Python-3.8-3776AB?style=for-the-badge&logo=python)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
----
+A production-ready SMS Spam Detection system powered by a hybrid **CNN + Bidirectional LSTM** deep learning architecture. Features a modern dashboard interface with real-time inference capabilities.
 
-##  Features
-
-* Detects whether a message is **Spam or Ham**
-* Uses **Neural Network with Embedding + Dropout**
-* Achieves **~98–99% accuracy**
-* REST API built using **Flask**
-* Interactive frontend using HTML + JavaScript
+![Dashboard Preview](assets/dashboard-preview.png)
 
 ---
 
-## 🧠 Model Details
-
-* **Dataset**: SMS Spam Collection Dataset
-
-* **Preprocessing**:
-
-  * Lowercasing
-  * Removing special characters
-  * Tokenization
-  * Padding sequences
-
-* **Architecture**:
-
-  * Embedding Layer
-  * Dense Layers
-  * Dropout (for overfitting control)
-
-* **Techniques Used**:
-
-  * Early Stopping
-  * Class Weights (for imbalance handling)
+## 📋 Table of Contents
+- [✨ Features](#-features)
+- [🏗️ Architecture](#️-architecture)
+- [📊 Model Performance](#-model-performance)
+- [🛠️ Tech Stack](#️-tech-stack)
+- [📁 Project Structure](#-project-structure)
+- [⚡ Quick Start](#-quick-start)
+- [🎯 API Reference](#-api-reference)
+- [🎨 Dashboard Design](#-dashboard-design)
+- [🧪 Testing](#-testing)
+- [📈 Future Improvements](#-future-improvements)
+- [📝 License](#-license)
 
 ---
 
-## 📊 Performance
+## ✨ Features
 
-* **Accuracy**: ~98–99%
-* **Low False Positives & False Negatives**
+### 🔍 Core Functionality
+- **Real-time SMS Classification** - Instant spam/ham detection
+- **95%+ Accuracy** - High precision deep learning model
+- **Interactive Dashboard** - Modern, responsive web interface
+- **REST API** - Easy integration with other applications
 
-Example Confusion Matrix:
+### 🎨 UI/UX Features
+- **Dark Theme Dashboard** - Easy on the eyes
+- **Live Statistics** - Track session predictions
+- **Quick Sample Tests** - One-click test messages
+- **History Tracking** - Recent predictions log
+- **Probability Meter** - Visual confidence indicator
+- **Mobile Responsive** - Works on all devices
 
-```
-[[964   2]
- [  8 141]]
-```
-
----
-
-## 🗂️ Project Structure
-
-```
-Spam-Message-Detection-using-Deep-Learning
-/
-│
-├── app.py
-├── models/
-│   ├── spam_model.h5
-│   ├── tokenizer.pkl
-├── dataset/
-│   └── spam.csv
-├── templates/
-│   └── index.html
-├── spam_detection.ipynb
-└── README.md
-```
+### 🤖 Model Features
+- **CNN + BiLSTM Architecture** - Hybrid deep learning
+- **Embedding Layer** - 10,000 vocabulary size
+- **Early Stopping** - Prevents overfitting
+- **Class Weighting** - Handles imbalanced data
 
 ---
 
-## ⚙️ Installation
+## 🏗️ Architecture
 
-```bash
-git clone https://github.com/your-username/spam-detection.git
-cd spam-detection
-pip install -r requirements.txt
-```
-
----
-
-## ▶️ Run the App
-
-```bash
-python app.py
-```
-
-Open browser:
-
-```
-http://127.0.0.1:5000/
-```
-
----
-
-## 📡 API Endpoint
-
-### POST `/predict`
-
-**Request:**
-
-```json
-{
-  "message": "You won a free prize!"
-}
-```
-
-**Response:**
-
-```json
-{
-  "message": "You won a free prize!",
-  "probability": 0.99,
-  "verdict": "SPAM",
-  "threshold": 0.5
-}
-```
-
----
-
-## Example
-
-| Message                    | Prediction |
-| -------------------------- | ---------- |
-| "Win cash now!!!"          | SPAM       |
-| "Are you coming to class?" | HAM        |
-
----
-
-## 📌 Notes
-
-* Ensure `tokenizer.pkl` and `spam_model.h5` are from the **same training session**
-* Keep `maxlen` consistent between training and inference
-
----
-
-##  Future Improvements
-
-* Improve UI with better design
-* Deploy using **Render / Vercel / AWS**
-* Add real-time message filtering
-
----
+### Neural Network Design
