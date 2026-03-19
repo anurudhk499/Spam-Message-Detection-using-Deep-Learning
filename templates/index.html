@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SMS Spam Detector · AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset & Base ──────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #080b14;
+    --bg2:      #0f1422;
+    --bg3:      #141928;
+    --card:     rgba(255,255,255,0.035);
+    --border:   rgba(255,255,255,0.07);
+    --border2:  rgba(255,255,255,0.12);
+    --teal:     #00d4aa;
+    --teal-dim: rgba(0,212,170,0.12);
+    --red:      #ff4757;
+    --red-dim:  rgba(255,71,87,0.12);
+    --amber:    #ffa502;
+    --text:     #e8eaf0;
+    --muted:    #6b7280;
+    --muted2:   #9ca3af;
+    --font:     'Sora', sans-serif;
+    --mono:     'JetBrains Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Animated grid background ──────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,170,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,170,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Layout ─────────────────────────────────────────────── */
+  .page { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 2rem;
+    background: rgba(8,11,20,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; }
+  .nav-icon {
+    width: 34px; height: 34px; background: var(--teal-dim);
+    border: 1px solid var(--teal); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-icon svg { width: 18px; height: 18px; stroke: var(--teal); }
+  .nav-title { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+  .nav-title span { color: var(--teal); }
+  .nav-pill {
+    font-family: var(--mono); font-size: 11px;
+    padding: 4px 10px; border-radius: 100px;
+    background: var(--teal-dim); border: 1px solid rgba(0,212,170,0.3);
+    color: var(--teal); letter-spacing: 0.05em;
+  }
+
+  /* ── Hero section ───────────────────────────────────────── */
+  .hero { text-align: center; padding: 3rem 0 2.5rem; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11px; color: var(--teal);
+    background: var(--teal-dim); border: 1px solid rgba(0,212,170,0.25);
+    padding: 5px 14px; border-radius: 100px; margin-bottom: 1.5rem;
+    letter-spacing: 0.08em;
+  }
+  .hero-badge::before { content: '●'; font-size: 8px; animation: blink 1.5s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 700; line-height: 1.1;
+    letter-spacing: -0.03em; margin-bottom: 1rem;
+  }
+  .hero h1 span { color: var(--teal); }
+  .hero p { font-size: 15px; color: var(--muted2); max-width: 500px; margin: 0 auto; line-height: 1.7; }
+
+  /* ── Stats row ──────────────────────────────────────────── */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    margin: 2.5rem 0;
+  }
+  @media(max-width:700px){ .stats-grid { grid-template-columns: repeat(2,1fr); } }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.25rem;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .stat-label { font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 8px; }
+  .stat-value { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.03em; }
+  .stat-value.teal { color: var(--teal); }
+  .stat-value.amber { color: var(--amber); }
+  .stat-value.red { color: var(--red); }
+  .stat-desc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Main grid ──────────────────────────────────────────── */
+  .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+  @media(max-width:900px){ .main-grid { grid-template-columns: 1fr; } }
+
+  /* ── Card base ──────────────────────────────────────────── */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 18px; padding: 1.5rem;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 600; color: var(--muted2);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem;
+  }
+  .card-title::before { content: ''; display: block; width: 3px; height: 14px; background: var(--teal); border-radius: 2px; }
+
+  /* ── Textarea ───────────────────────────────────────────── */
+  .msg-wrap { position: relative; margin-bottom: 14px; }
+  .msg-area {
+    width: 100%; min-height: 130px; resize: vertical;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border2);
+    border-radius: 12px; padding: 14px 16px;
+    font-family: var(--mono); font-size: 14px;
+    color: var(--text); outline: none; line-height: 1.6;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .msg-area::placeholder { color: var(--muted); }
+  .msg-area:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-dim); }
+  .char-count {
+    position: absolute; bottom: 10px; right: 12px;
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+  }
+
+  /* ── Quick test chips ───────────────────────────────────── */
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
+  .chip {
+    font-size: 12px; padding: 5px 12px; border-radius: 100px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border2);
+    color: var(--muted2); cursor: pointer; font-family: var(--font);
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .chip:hover { background: var(--teal-dim); border-color: rgba(0,212,170,0.4); color: var(--teal); }
+
+  /* ── Analyze button ─────────────────────────────────────── */
+  .btn-row { display: flex; gap: 10px; align-items: center; }
+  .btn-analyze {
+    flex: 1; padding: 13px 24px;
+    background: var(--teal); color: #080b14;
+    border: none; border-radius: 11px;
+    font-family: var(--font); font-size: 14px; font-weight: 600;
+    cursor: pointer; letter-spacing: -0.01em;
+    transition: opacity 0.15s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 24px rgba(0,212,170,0.2);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-analyze:hover { opacity: 0.9; box-shadow: 0 0 32px rgba(0,212,170,0.35); }
+  .btn-analyze:active { transform: scale(0.98); }
+  .btn-analyze:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+  .btn-clear {
+    padding: 13px 18px; background: transparent;
+    border: 1px solid var(--border2); border-radius: 11px;
+    color: var(--muted2); cursor: pointer; font-family: var(--font); font-size: 14px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn-clear:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+  /* ── Result panel ───────────────────────────────────────── */
+  #result { display: none; margin-top: 20px; }
+  .result-inner {
+    border: 1px solid var(--border2); border-radius: 16px;
+    overflow: hidden; transition: border-color 0.4s;
+  }
+  .result-inner.spam  { border-color: rgba(255,71,87,0.5);  background: var(--red-dim); }
+  .result-inner.ham   { border-color: rgba(0,212,170,0.5);  background: var(--teal-dim); }
+  .result-inner.scanning { border-color: rgba(255,165,2,0.4); background: rgba(255,165,2,0.06); }
+
+  .result-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);
+  }
+  .verdict-tag {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    padding: 5px 14px; border-radius: 100px; letter-spacing: 0.1em;
+  }
+  .verdict-tag.spam  { background: rgba(255,71,87,0.15);  color: var(--red);  border: 1px solid rgba(255,71,87,0.35); }
+  .verdict-tag.ham   { background: rgba(0,212,170,0.12);  color: var(--teal); border: 1px solid rgba(0,212,170,0.35); }
+  .verdict-tag.scanning { background: rgba(255,165,2,0.1); color: var(--amber); border: 1px solid rgba(255,165,2,0.3); }
+
+  .prob-display { text-align: right; }
+  .prob-big { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+  .prob-big.spam { color: var(--red); }
+  .prob-big.ham  { color: var(--teal); }
+  .prob-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .result-bottom { padding: 1.25rem 1.5rem; }
+  .meter-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .meter-track {
+    background: rgba(255,255,255,0.06); border-radius: 100px;
+    height: 10px; overflow: hidden;
+  }
+  .meter-fill {
+    height: 100%; border-radius: 100px; width: 0%;
+    transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .meter-fill.spam { background: linear-gradient(90deg, #ff4757, #ff6b81); }
+  .meter-fill.ham  { background: linear-gradient(90deg, #00d4aa, #00f5c4); }
+  .meter-fill.scanning { background: var(--amber); animation: sweep 1.2s ease-in-out infinite alternate; }
+  @keyframes sweep { from{width:20%} to{width:80%} }
+
+  .scan-msg {
+    margin-top: 14px; padding: 10px 14px;
+    background: rgba(255,255,255,0.03); border-radius: 10px;
+    font-family: var(--mono); font-size: 12px; color: var(--muted2); line-height: 1.5;
+  }
+  .scan-msg .teal { color: var(--teal); }
+  .scan-msg .red  { color: var(--red); }
+
+  /* ── Right sidebar ──────────────────────────────────────── */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── History list ───────────────────────────────────────── */
+  .history-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 1.5rem 0; }
+  .history-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    margin-bottom: 8px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .history-item:hover { background: rgba(255,255,255,0.055); border-color: var(--border2); }
+  .h-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .h-dot.spam { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .h-dot.ham  { background: var(--teal); box-shadow: 0 0 6px var(--teal); }
+  .h-text { font-size: 12px; color: var(--muted2); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); }
+  .h-pct { font-size: 11px; color: var(--muted); flex-shrink: 0; font-family: var(--mono); }
+
+  /* ── Model info card ────────────────────────────────────── */
+  .info-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .info-row:last-child { border-bottom: none; }
+  .info-key { font-size: 12px; color: var(--muted); }
+  .info-val { font-size: 12px; font-weight: 600; color: var(--text); font-family: var(--mono); }
+  .info-val.teal { color: var(--teal); }
+
+  /* ── Architecture card ──────────────────────────────────── */
+  .arch-layers { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .arch-layer {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 8px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .layer-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .l-emb  { background: #a78bfa; }
+  .l-conv { background: var(--amber); }
+  .l-pool { background: #60a5fa; }
+  .l-lstm { background: var(--teal); }
+  .l-dns  { background: #f472b6; }
+  .l-drop { background: var(--muted); }
+  .l-out  { background: var(--red); }
+  .layer-name { color: var(--muted2); font-family: var(--mono); flex: 1; }
+  .layer-detail { color: var(--muted); font-size: 11px; }
+
+  /* ── Counters ───────────────────────────────────────────── */
+  .live-counters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+  .live-card {
+    border-radius: 10px; padding: 12px; text-align: center;
+    border: 1px solid var(--border);
+  }
+  .live-card.spam-card { background: var(--red-dim); border-color: rgba(255,71,87,0.2); }
+  .live-card.ham-card  { background: var(--teal-dim); border-color: rgba(0,212,170,0.2); }
+  .live-num { font-size: 1.6rem; font-weight: 700; }
+  .live-num.red  { color: var(--red); }
+  .live-num.teal { color: var(--teal); }
+  .live-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.07em; }
+
+  /* ── Scrollbar ──────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+
+  /* ── Loader dots ─────────────────────────────────────────── */
+  .dots { display: inline-flex; gap: 4px; align-items: center; }
+  .dots span { width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: db .9s ease-in-out infinite; }
+  .dots span:nth-child(2){animation-delay:.15s}
+  .dots span:nth-child(3){animation-delay:.3s}
+  @keyframes db { 0%,80%,100%{transform:scale(0.5);opacity:0.3} 40%{transform:scale(1);opacity:1} }
+
+  /* ── Footer ─────────────────────────────────────────────── */
+  .footer { text-align: center; margin-top: 4rem; font-size: 12px; color: var(--muted); }
+  .footer span { color: var(--teal); }
+</style>
+</head>
+<body>
+
+<!-- ── Navbar ─────────────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <span class="nav-title">SMS<span>Guard</span> · AI</span>
+  </div>
+  <div class="nav-pill">CNN + BiLSTM</div>
+</nav>
+
+<!-- ── Page ─────────────────────────────────────────────────────────── -->
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-badge">LIVE · CNN + BiLSTM MODEL</div>
+    <h1>Detect Spam with<br><span>Deep Learning</span></h1>
+    <p>Real-time SMS classification using a trained Convolutional-BiLSTM neural network on the UCI Spam dataset.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Test Accuracy</div>
+      <div class="stat-value teal">98.8%</div>
+      <div class="stat-desc">On holdout test set</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Precision</div>
+      <div class="stat-value amber">97.5%</div>
+      <div class="stat-desc">Low false positives</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Recall</div>
+      <div class="stat-value amber">96.8%</div>
+      <div class="stat-desc">Catches most spam</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dataset</div>
+      <div class="stat-value">5,572</div>
+      <div class="stat-desc">UCI SMS messages</div>
+    </div>
+  </div>
+
+  <!-- Main grid -->
+  <div class="main-grid">
+
+    <!-- LEFT: Analyzer -->
+    <div>
+      <div class="card">
+        <div class="card-title">Message analyzer</div>
+
+        <!-- Quick test chips -->
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.05em;text-transform:uppercase;">Quick test samples</div>
+        <div class="chips">
+          <span class="chip" onclick="setMsg(this)">Free entry to win FA Cup final tkts! txt FA to 87121</span>
+          <span class="chip" onclick="setMsg(this)">Hey, are you coming to class today?</span>
+          <span class="chip" onclick="setMsg(this)">Claim your reward now! Click the link.</span>
+          <span class="chip" onclick="setMsg(this)">Congratulations! You won a £1000 gift card click link to redeem</span>
+          <span class="chip" onclick="setMsg(this)">Can we reschedule our meeting to 3pm?</span>
+          <span class="chip" onclick="setMsg(this)">URGENT: Your account will be suspended. Verify now.</span>
+        </div>
+
+        <!-- Text area -->
+        <div class="msg-wrap">
+          <textarea class="msg-area" id="msgInput" placeholder="Type or paste an SMS message to analyze..."></textarea>
+          <span class="char-count" id="charCount">0 / 160</span>
+        </div>
+
+        <!-- Buttons -->
+        <div class="btn-row">
+          <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Analyze message
+          </button>
+          <button class="btn-clear" onclick="clearAll()">Clear</button>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div id="result">
+        <div class="result-inner" id="resultInner">
+          <div class="result-top">
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.05em;text-transform:uppercase;">Classification</div>
+              <span class="verdict-tag" id="verdictTag">Scanning</span>
+            </div>
+            <div class="prob-display">
+              <div style="font-size:11px;color:var(--muted);margin-bottom:4px;letter-spacing:0.05em;text-transform:uppercase;">Spam probability</div>
+              <div class="prob-big" id="probBig">—</div>
+              <div class="prob-label" id="probLabel">Analyzing...</div>
+            </div>
+          </div>
+          <div class="result-bottom">
+            <div class="meter-label"><span>Safe</span><span>Spam</span></div>
+            <div class="meter-track"><div class="meter-fill" id="meterFill"></div></div>
+            <div class="scan-msg" id="scanMsg">Running inference...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Sidebar -->
+    <div class="sidebar">
+
+      <!-- Live counters -->
+      <div class="card">
+        <div class="card-title">Session stats</div>
+        <div class="live-counters">
+          <div class="live-card ham-card">
+            <div class="live-num teal" id="hamCount">0</div>
+            <div class="live-lbl">Ham</div>
+          </div>
+          <div class="live-card spam-card">
+            <div class="live-num red" id="spamCount">0</div>
+            <div class="live-lbl">Spam</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- History -->
+      <div class="card" style="flex:1">
+        <div class="card-title">Recent checks</div>
+        <div id="historyList"><div class="history-empty">No messages analyzed yet</div></div>
+      </div>
+
+      <!-- Model info -->
+      <div class="card">
+        <div class="card-title">Model details</div>
+        <div class="info-row"><span class="info-key">Architecture</span><span class="info-val teal">CNN + BiLSTM</span></div>
+        <div class="info-row"><span class="info-key">Embedding dim</span><span class="info-val">128</span></div>
+        <div class="info-row"><span class="info-key">Vocab size</span><span class="info-val">10,000</span></div>
+        <div class="info-row"><span class="info-key">Max length</span><span class="info-val">150 tokens</span></div>
+        <div class="info-row"><span class="info-key">LSTM units</span><span class="info-val">64 × 2 (bi)</span></div>
+        <div class="info-row"><span class="info-key">Dropout</span><span class="info-val">0.5</span></div>
+        <div class="info-row"><span class="info-key">Framework</span><span class="info-val">TensorFlow 2</span></div>
+        <div class="info-row"><span class="info-key">F1 Score</span><span class="info-val teal">97.1%</span></div>
+      </div>
+
+      <!-- Architecture layers -->
+      <div class="card">
+        <div class="card-title">Architecture</div>
+        <div class="arch-layers">
+          <div class="arch-layer"><div class="layer-dot l-emb"></div><span class="layer-name">Embedding</span><span class="layer-detail">10k × 128</span></div>
+          <div class="arch-layer"><div class="layer-dot l-conv"></div><span class="layer-name">Conv1D</span><span class="layer-detail">128 filters, k=5</span></div>
+          <div class="arch-layer"><div class="layer-dot l-pool"></div><span class="layer-name">MaxPooling1D</span><span class="layer-detail">pool=2</span></div>
+          <div class="arch-layer"><div class="layer-dot l-lstm"></div><span class="layer-name">BiLSTM</span><span class="layer-detail">64 units × 2</span></div>
+          <div class="arch-layer"><div class="layer-dot l-dns"></div><span class="layer-name">Dense</span><span class="layer-detail">64, ReLU</span></div>
+          <div class="arch-layer"><div class="layer-dot l-drop"></div><span class="layer-name">Dropout</span><span class="layer-detail">rate = 0.5</span></div>
+          <div class="arch-layer"><div class="layer-dot l-out"></div><span class="layer-name">Dense (output)</span><span class="layer-detail">1, Sigmoid</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">Built with <span>TensorFlow + Flask</span> · CNN+BiLSTM · UCI SMS Spam Dataset</div>
+</div>
+
+<script>
+const history = [];
+let hamTotal = 0, spamTotal = 0;
+
+// char counter
+document.getElementById('msgInput').addEventListener('input', function() {
+  document.getElementById('charCount').textContent = this.value.length + ' / 160';
+});
+
+function setMsg(el) {
+  document.getElementById('msgInput').value = el.textContent.trim();
+  document.getElementById('charCount').textContent = el.textContent.trim().length + ' / 160';
+}
+
+function clearAll() {
+  document.getElementById('msgInput').value = '';
+  document.getElementById('charCount').textContent = '0 / 160';
+  document.getElementById('result').style.display = 'none';
+}
+
+async function analyze() {
+  const text = document.getElementById('msgInput').value.trim();
+  if (!text) return;
+
+  // Show scanning state
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="dots"><span></span><span></span><span></span></span> Analyzing';
+
+  const result    = document.getElementById('result');
+  const inner     = document.getElementById('resultInner');
+  const tag       = document.getElementById('verdictTag');
+  const probBig   = document.getElementById('probBig');
+  const probLabel = document.getElementById('probLabel');
+  const fill      = document.getElementById('meterFill');
+  const scanMsg   = document.getElementById('scanMsg');
+
+  result.style.display = 'block';
+  inner.className = 'result-inner scanning';
+  tag.className   = 'verdict-tag scanning';
+  tag.textContent = 'Scanning…';
+  probBig.className = 'prob-big';
+  probBig.textContent = '—';
+  probLabel.textContent = 'Running model…';
+  fill.className = 'meter-fill scanning';
+  fill.style.width = '0%';
+  scanMsg.innerHTML = '⟳ Tokenizing → padding → inference…';
+
+  try {
+    const res  = await fetch('/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    
+    // Check if there's an error
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    // FIX: Use data.probability (from Flask response) instead of data.prob
+    const prob = data.probability;  // Changed from data.prob
+    const pct  = Math.round(prob * 100);
+    const isSpam = data.verdict === 'SPAM';
+
+    // Update UI
+    inner.className = 'result-inner ' + (isSpam ? 'spam' : 'ham');
+    tag.className   = 'verdict-tag '  + (isSpam ? 'spam' : 'ham');
+    tag.textContent = data.verdict;
+
+    probBig.className   = 'prob-big ' + (isSpam ? 'spam' : 'ham');
+    probBig.textContent = pct + '%';
+    probLabel.textContent = 'spam probability';
+
+    fill.className = 'meter-fill ' + (isSpam ? 'spam' : 'ham');
+    setTimeout(() => { fill.style.width = pct + '%'; }, 60);
+
+    if (isSpam) {
+      scanMsg.innerHTML = `<span class="red">⚠ SPAM DETECTED</span> · Probability: ${prob.toFixed(4)} · This message shows spam characteristics. Do not click any links.`;
+    } else {
+      scanMsg.innerHTML = `<span class="teal">✓ LEGITIMATE (HAM)</span> · Probability: ${prob.toFixed(4)} · No spam indicators found. Message looks safe.`;
+    }
+
+    // Update counters
+    if (isSpam) spamTotal++; else hamTotal++;
+    document.getElementById('spamCount').textContent = spamTotal;
+    document.getElementById('hamCount').textContent  = hamTotal;
+
+    // Add to history
+    history.unshift({ text, verdict: data.verdict, pct });
+    if (history.length > 8) history.pop();
+    renderHistory();
+
+  } catch(e) {
+    console.error('Error:', e);
+    scanMsg.innerHTML = `<span class="red">⚠ Error: ${e.message || 'Could not connect to model server. Make sure Flask is running.'}</span>`;
+    inner.className = 'result-inner scanning';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Analyze message`;
+}
+
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  if (!history.length) {
+    el.innerHTML = '<div class="history-empty">No messages analyzed yet</div>';
+    return;
+  }
+  el.innerHTML = history.map(h => `
+    <div class="history-item" onclick="loadHistory('${h.text.replace(/'/g,"\\'")}')">
+      <div class="h-dot ${h.verdict === 'SPAM' ? 'spam' : 'ham'}"></div>
+      <div class="h-text">${h.text}</div>
+      <div class="h-pct">${h.pct}%</div>
+    </div>
+  `).join('');
+}
+
+function loadHistory(text) {
+  document.getElementById('msgInput').value = text;
+  document.getElementById('charCount').textContent = text.length + ' / 160';
+}
+</script>
+</body>
+</html>
